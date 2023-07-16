@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdnoreturn.h>
 #include <time.h>
@@ -423,4 +424,70 @@ Vector *vec_reverse(Vector *vec);
 void *vec_body(Vector *vec);
 int vec_len(Vector *vec);
 
+typedef struct func {
+    char *name;
+    Vector *code;
+
+} Function;
+
+enum Opcode {
+    BLOAD,
+    LDCP
+};
+
+typedef struct elem {
+    uint8_t tag;
+    union {
+        Buffer* str;
+        int8_t byte;
+        int16_t sht;
+        int32_t integer;
+        int64_t lng;
+    } content;
+} Elem;
+
+enum Tag {
+    BYTE,
+    STRING,
+    SHORT,
+    INT,
+    LONG
+};
+
+#define new_byte(cp, ele, val) \
+    ele = malloc(sizeof(Elem)); \
+    ele->tag = BYTE; \
+    ele->content.byte = val;\
+    vec_push(cp, ele);
+
+#define new_short(cp, ele, val) \
+    ele = malloc(sizeof(Elem)); \
+    ele->tag = SHORT; \
+    ele->content.sht = val;\
+    vec_push(cp, ele);
+
+#define new_int(cp, ele, val) \
+    ele = malloc(sizeof(Elem)); \
+    ele->tag = INT; \
+    ele->content.integer = val;\
+    vec_push(cp, ele);
+
+#define new_long(cp, ele, val) \
+    ele = malloc(sizeof(Elem)); \
+    ele->tag = LONG; \
+    ele->content.lng = val;\
+    vec_push(cp, ele);
+
+#define new_str(cp, ele, val) \
+    ele = malloc(sizeof(Elem)); \
+    ele->tag = STRING; \
+    ele->content->str = val;\
+    vec_push(cp, ele);
+
+#define emit_noarg(code, opcode) vec_push(code, (void*) opcode)
+#define emit_arg1(code, opcode, arg1) vec_push(code, (void*) opcode); \
+    vec_push(code, (void*) arg1);
+#define emit_arg2(code, opcode, arg1, arg2) vec_push(code, (void*) opcode); \
+    vec_push(code, (void*) arg1); \
+    vec_push(code, (void*) arg2);
 #endif

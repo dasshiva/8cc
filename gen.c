@@ -24,6 +24,8 @@ static Map *source_files = &EMPTY_MAP;
 static Map *source_lines = &EMPTY_MAP;
 static char *last_loc = "";
 
+static Vector* code = &EMPTY_VECTOR;
+static Vector* cpool = &EMPTY_VECTOR;
 static void emit_addr(Node *node);
 static void emit_expr(Node *node);
 static void emit_decl_init(Vector *inits, int off, int totalsize);
@@ -715,10 +717,13 @@ static void emit_jmp(char *label) {
 }
 
 static void emit_literal(Node *node) {
+    Function* fn = (Function*) vec_get(code, vec_len(code) - 1);
     SAVE;
     switch (node->ty->kind) {
     case KIND_BOOL:
     case KIND_CHAR:
+        emit_arg1(fn->code, BLOAD, node->ival);
+        break;
     case KIND_SHORT:
         emit("mov $%u, #rax", node->ival);
         break;
@@ -1205,7 +1210,6 @@ static void emit_computed_goto(Node *node) {
 
 static void emit_expr(Node *node) {
     SAVE;
-    maybe_print_source_loc(node);
     switch (node->kind) {
     case AST_LITERAL: emit_literal(node); return;
     case AST_LVAR:    emit_lvar(node); return;
@@ -1513,6 +1517,10 @@ void emit_toplevel(Node *v) {
     stackpos = 8;
     if (v->kind == AST_FUNC) {
         emit_func_prologue(v);
+        Function* fn = malloc(sizeof(Function));
+        fn->name = v->fname;
+        fn->code = make_vector();
+        vec_push(code, fn);
         emit_expr(v->body);
         emit_ret();
     } else if (v->kind == AST_DECL) {
